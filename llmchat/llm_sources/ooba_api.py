@@ -10,10 +10,6 @@ from llmchat.logger import logger
 import discord
 import requests
 
-# For local streaming, the websockets are hosted without ssl - http://
-HOST = llmchat.config.oobabooga_listen_port
-URI = f'http://{HOST}/api/v1/generate'
-
 class OobaClient(LLMSource):
     """
     Client for the Ooba API.  
@@ -21,6 +17,7 @@ class OobaClient(LLMSource):
 
     def __init__(self, client: discord.Client, config: Config, db: PersistentData):
         super(OobaClient, self).__init__(client, config, db)
+        self.uri = f'http://{self.config.oobabooga_listen_port}/api/v1/generate'
 
     def similar_messages(self, last_message, messages_pool):
         similar_matches = []
@@ -104,7 +101,7 @@ class OobaClient(LLMSource):
                 'stopping_strings': []
             }
 
-            response = requests.post(URI, json=request)
+            response = requests.post(self.uri, json=request)
 
             if response.status_code == 200:
                 result = response.json()['results'][0]['text']
