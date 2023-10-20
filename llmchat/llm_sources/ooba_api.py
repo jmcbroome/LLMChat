@@ -8,21 +8,16 @@ from llmchat.config import Config
 from llmchat.persistence import PersistentData
 from llmchat.logger import logger
 import discord
-import time
-import typing
 import requests
-import html
-import json
+
 # For local streaming, the websockets are hosted without ssl - http://
 HOST = 'localhost:5000'
-URI = f'http://{HOST}/api/v1/chat'
+URI = f'http://{HOST}/api/v1/generate'
 
 class OobaClient(LLMSource):
     """
     Client for the Ooba API.  
     """
-
-    OOBABOOGA_URI_PATH: str = "/api/v1/generate"
 
     def __init__(self, client: discord.Client, config: Config, db: PersistentData):
         super(OobaClient, self).__init__(client, config, db)
