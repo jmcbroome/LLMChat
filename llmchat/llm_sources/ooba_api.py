@@ -17,7 +17,6 @@ class OobaClient(LLMSource):
 
     def __init__(self, client: discord.Client, config: Config, db: PersistentData):
         super(OobaClient, self).__init__(client, config, db)
-        self.uri = f'http://{self.config.oobabooga_listen_port}/api/v1/generate'
 
     def similar_messages(self, last_message, messages_pool):
         similar_matches = []
@@ -100,8 +99,8 @@ class OobaClient(LLMSource):
                 'skip_special_tokens': True,
                 'stopping_strings': []
             }
-
-            response = requests.post(self.uri, json=request)
+            uri = f'http://{self.config.oobabooga_listen_port}/api/v1/generate'
+            response = requests.post(uri, json=request)
 
             if response.status_code == 200:
                 result = response.json()['results'][0]['text']
