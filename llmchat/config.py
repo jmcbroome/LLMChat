@@ -72,11 +72,11 @@ class Config:
 
     @property
     def use_local_embeddings(self) -> bool:
-        return self._config.get("LLM", "use_local_embeddings")
+        return self._config.getboolean("LLM", "use_local_embeddings", fallback=False)
     
     @use_local_embeddings.setter
     def use_local_embeddings(self, local_embeddings):
-        self._config.set("LLM", "use_local_embeddings", local_embeddings)
+        self._config.set("LLM", "use_local_embeddings", "true" if local_embeddings else "false")
 
     @property
     def oobabooga_listen_port(self) -> str:
