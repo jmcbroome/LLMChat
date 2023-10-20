@@ -71,6 +71,23 @@ class Config:
         self.save()
 
     @property
+    def use_local_embeddings(self) -> bool:
+        return self._config.get("LLM", "use_local_embeddings")
+    
+    @use_local_embeddings.setter
+    def use_local_embeddings(self, local_embeddings):
+        self._config.set("LLM", "use_local_embeddings", local_embeddings)
+
+    @property
+    def oobabooga_listen_port(self) -> str:
+        return self._config.get("Oobabooga", "listen_port")
+
+    @oobabooga_listen_port.setter
+    def oobabooga_listen_port(self, port):
+        self._config.set("Oobabooga", "listen_port", str(port))
+        self.save()
+
+    @property
     def llm_context_messages_count(self) -> int:
         return self._config.getint("LLM", "context_messages_count")
 
