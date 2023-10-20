@@ -7,6 +7,9 @@ from typing import Union
 from discord import app_commands
 from discord.interactions import Interaction
 import openai
+from sentence_transformers import SentenceTransformer
+embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+
 from aiohttp import ClientSession
 import ui_extensions
 
@@ -520,6 +523,10 @@ class DiscordClient(discord.Client):
                 embedding = await openai.Embedding.acreate(api_base=self.config.openai_reverse_proxy_url, input=content, model="text-embedding-ada-002")
                 self.db.add_embedding(message, embedding['data'][0]['embedding'])
                 logger.debug("Added embedding for message " + str(message_id))
+        elif self.config.use_local_embeddings:
+            embedding = embedding_model.encode(message)
+            self.db.add_embedding(message, embedding)
+            logger.debug("Added embedding for message " + str(message_id))
 
     async def on_speech(self, speaker_id, speech):
         speaker = discord.utils.get(self.get_all_members(), id=speaker_id)
