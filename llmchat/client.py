@@ -165,6 +165,9 @@ class DiscordClient(discord.Client):
         elif self.config.bot_llm == "llama":
             from llm_sources.llama import LLaMA
             self.llm = LLaMA(*params)
+        elif self.config.bot_llm == "ooba":
+            from llm_sources.ooba_api import OobaClient
+            self.llm = OobaClient(*params)
         else:
             logger.critical(f"Unknown LLM: {self.config.bot_llm}")
 
