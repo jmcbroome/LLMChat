@@ -11,7 +11,7 @@ import discord
 import requests
 
 # For local streaming, the websockets are hosted without ssl - http://
-HOST = 'localhost:5000'
+HOST = llmchat.config.oobabooga_listen_port
 URI = f'http://{HOST}/api/v1/generate'
 
 class OobaClient(LLMSource):
