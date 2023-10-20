@@ -17,7 +17,7 @@ class SileroTTS(TTSSource):
         super(SileroTTS, self).__init__(client, config, db)
         device = torch.device('cpu') if not torch.cuda.is_available() else torch.device('cuda')
         if not os.path.isdir("models/torch/"):
-            os.mkdir("models/torch/")
+            os.makedirs("models/torch/")
         torch.hub.set_dir("models/torch/")
         self.model, example_text = torch.hub.load(repo_or_dir='snakers4/silero-models', model='silero_tts', language='en', speaker="v3_en", device=device)
         logger.info("Silero loaded.")
