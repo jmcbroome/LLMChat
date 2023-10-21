@@ -165,7 +165,7 @@ class DiscordClient(discord.Client):
         elif self.config.bot_llm == "llama":
             from llm_sources.llama import LLaMA
             self.llm = LLaMA(*params)
-        elif self.config.bot_llm == "ooba":
+        elif self.config.bot_llm == "oobabooga":
             from llm_sources.ooba_api import OobaClient
             self.llm = OobaClient(*params)
         else:
@@ -527,7 +527,7 @@ class DiscordClient(discord.Client):
                 self.db.add_embedding(message, embedding['data'][0]['embedding'])
                 logger.debug("Added embedding for message " + str(message_id))
         elif self.config.use_local_embeddings:
-            embedding = embedding_model.encode(message)
+            embedding = embedding_model.encode([message])[0]
             self.db.add_embedding(message, embedding)
             logger.debug("Added embedding for message " + str(message_id))
 

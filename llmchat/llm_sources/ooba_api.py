@@ -9,6 +9,7 @@ from llmchat.persistence import PersistentData
 from llmchat.logger import logger
 import discord
 import requests
+import json
 
 class OobaClient(LLMSource):
     """
@@ -46,10 +47,11 @@ class OobaClient(LLMSource):
         context = [initial] 
         context.append("###RELEVANT MEMORIES:")
         for memory in similar_messages:
-             context.append(memory)
+             context.append(memory[1])
         context.append("###CURRENT CONVERSATION:")
-        for message in recent_messages:
-             context.append(message)
+        for message in recent_messages[:-1]:
+             context.append(message[1])
+        logger.debug(context)
         return "\n".join(context)
 
     async def generate_response(
@@ -59,10 +61,26 @@ class OobaClient(LLMSource):
             prompt = self.get_prompt(invoker)
             logger.debug(prompt)
             request = {
-                'prompt': prompt,
+                'user_input': prompt,
                 'max_new_tokens': 250,
                 'auto_max_new_tokens': False,
                 'max_tokens_second': 0,
+                'history': {'internal':[],'visible':[]},
+                'mode': 'chat',  # Valid options: 'chat', 'chat-instruct', 'instruct'
+                'character': 'Example',
+                'instruction_template': 'Vicuna-v1.1',  # Will get autodetected if unset
+                'your_name': 'You',
+                # 'name1': 'name of user', # Optional
+                # 'name2': 'name of character', # Optional
+                # 'context': 'character context', # Optional
+                # 'greeting': 'greeting', # Optional
+                # 'name1_instruct': 'You', # Optional
+                # 'name2_instruct': 'Assistant', # Optional
+                # 'context_instruct': 'context_instruct', # Optional
+                # 'turn_template': 'turn_template', # Optional
+                'regenerate': False,
+                '_continue': False,
+                'chat_instruct_command': 'Continue the chat dialogue below. Write a single reply for the character "<|character|>".\n\n<|prompt|>',
 
                 # Generation params. If 'preset' is set to different than 'None', the values
                 # in presets/preset-name.yaml are used instead of the individual numbers.
@@ -99,9 +117,11 @@ class OobaClient(LLMSource):
                 'skip_special_tokens': True,
                 'stopping_strings': []
             }
-            uri = f'http://{self.config.oobabooga_listen_port}/api/v1/generate'
+            host = str(self.config.oobabooga_listen_port)
+            uri = f'http://{host}/api/v1/chat'
             response = requests.post(uri, json=request)
 
             if response.status_code == 200:
-                result = response.json()['results'][0]['text']
-                return result
+                result = response.json()
+                logger.debug(json.dumps(result))
+                return result['results'][0]['history']['internal'][0][-1]
