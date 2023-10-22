@@ -49,7 +49,7 @@ class OobaClient(LLMSource):
             final_messages.append(fmt_message)
         return final_messages
 
-    def get_prompt(self, invoker: discord.User = None) -> str:
+    async def get_prompt(self, invoker: discord.User = None) -> str:
         initial = self.get_initial(invoker)
         all_messages = self.db.get_recent_messages()
         recent_messages = all_messages[-self.config.llm_context_messages_count:]
@@ -65,11 +65,11 @@ class OobaClient(LLMSource):
                 similar_messages.sort(key=lambda m: m[2])
         context = [initial] 
         context.append("###RELEVANT MEMORIES:")
-        memories = self.add_author_to_messages(similar_messages)
+        memories = await self.add_author_to_messages(similar_messages)
         for memory in memories:
              context.append(memory)
         context.append("###CURRENT CONVERSATION:")
-        current_conversation = self.add_author_to_messages(recent_messages)
+        current_conversation = await self.add_author_to_messages(recent_messages)
         for message in current_conversation:
              context.append(message)
         logger.debug(context)
@@ -79,7 +79,7 @@ class OobaClient(LLMSource):
         self, invoker: discord.User = None, _retry_count=0
     ) -> str:
             # completion_tokens = self.config.llm_max_tokens
-            prompt = self.get_prompt(invoker)
+            prompt = await self.get_prompt(invoker)
             logger.debug(prompt)
             request = {
                 'user_input': prompt,
@@ -88,7 +88,7 @@ class OobaClient(LLMSource):
                 'max_tokens_second': 0,
                 'history': {'internal':[],'visible':[]},
                 'mode': 'chat',  # Valid options: 'chat', 'chat-instruct', 'instruct'
-                'character': 'Example',
+                'character': 'xalibot',
                 'instruction_template': 'Vicuna-v1.1',  # Will get autodetected if unset
                 'your_name': 'You',
                 'regenerate': False,
