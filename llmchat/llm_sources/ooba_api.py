@@ -30,6 +30,25 @@ class OobaClient(LLMSource):
             logger.warn("Unable to find embedding for message " + last_message[2])
         return similar_matches
 
+    async def add_author_to_messages(self, messages):
+        final_messages = []
+        for i in messages:
+            fmt_message = ""
+            author_id, content, message_id = i
+            if author_id == -1:
+                continue
+            elif author_id == self.client.user.id:
+                fmt_message += f"{self.config.bot_name}: {content}"
+            else:
+                name = (await self.client.fetch_user(author_id)).display_name
+                identity = self.db.get_identity(author_id)
+                if identity is not None:
+                    name_, identity = identity
+                    name = name_
+                fmt_message += f"{name}: {content}"
+            final_messages.append(fmt_message)
+        return final_messages
+
     def get_prompt(self, invoker: discord.User = None) -> str:
         initial = self.get_initial(invoker)
         all_messages = self.db.get_recent_messages()
@@ -46,11 +65,13 @@ class OobaClient(LLMSource):
                 similar_messages.sort(key=lambda m: m[2])
         context = [initial] 
         context.append("###RELEVANT MEMORIES:")
-        for memory in similar_messages:
-             context.append(memory[1])
+        memories = self.add_author_to_messages(similar_messages)
+        for memory in memories:
+             context.append(memory)
         context.append("###CURRENT CONVERSATION:")
-        for message in recent_messages:
-             context.append(message[1])
+        current_conversation = self.add_author_to_messages(recent_messages)
+        for message in current_conversation:
+             context.append(message)
         logger.debug(context)
         return "\n".join(context)
 
@@ -115,5 +136,5 @@ class OobaClient(LLMSource):
 
             if response.status_code == 200:
                 result = response.json()
-                logger.debug(json.dumps(result))
+                logger.debug(result['results'][0]['history']['internal'][0][-1])
                 return result['results'][0]['history']['internal'][0][-1]
