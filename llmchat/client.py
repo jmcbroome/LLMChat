@@ -274,6 +274,11 @@ class DiscordClient(discord.Client):
     async def set_audiobook_mode(self, ctx: Interaction, status: bool):
         self.config.bot_audiobook_mode = status
         vc: discord.VoiceClient = ctx.guild.voice_client
+        try:
+            vc.init_audio_processing_pool(max_processes=4, wait_timeout=3)
+            logger.debug("Initialized audio processing pool.")
+        except RuntimeError:
+            logger.debug("Audio processing pool already initialized; continuing.")
         if vc and vc.is_connected():
             if self.config.bot_audiobook_mode:
                 vc.stop_listening()
@@ -565,6 +570,11 @@ class DiscordClient(discord.Client):
             # member joined channel, join if you haven't already
             if member.guild.voice_client is None:
                 vc: discord.VoiceClient = await after.channel.connect()
+                try:
+                    vc.init_audio_processing_pool(max_processes=4, wait_timeout=3)
+                    logger.debug("Initialized audio processing pool.")
+                except RuntimeError:
+                    logger.debug("Audio processing pool already initialized; continuing.")
                 if self.config.bot_audiobook_mode:
                     return
                 self.sink = BufferAudioSink(self.sr, self.on_speech, self.loop)

@@ -96,7 +96,15 @@ class BufferAudioSink(discord.AudioSink):
 
         # adapted from https://github.com/vadimkantorov/discordspeechtotext/
         self.speaker = voice_data.user.id
-        frame = np.ndarray(shape=(self.NUM_SAMPLES, self.NUM_CHANNELS), dtype='int16', buffer=voice_data.audio)
+        dtype = np.int16
+        buffer_size = len(voice_data.audio) // np.dtype(dtype).itemsize
+        frame = np.frombuffer(voice_data.audio, dtype=dtype, count=buffer_size)
+        try:
+            frame = frame.reshape((2, -1))
+            frame = np.transpose(frame)
+        except ValueError:
+            pass
+
         speaking = np.abs(frame).max() > 10
 
         if speaking and not self.is_speaking:

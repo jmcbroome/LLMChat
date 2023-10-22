@@ -49,7 +49,7 @@ class OobaClient(LLMSource):
         for memory in similar_messages:
              context.append(memory[1])
         context.append("###CURRENT CONVERSATION:")
-        for message in recent_messages[:-1]:
+        for message in recent_messages:
              context.append(message[1])
         logger.debug(context)
         return "\n".join(context)
@@ -70,14 +70,6 @@ class OobaClient(LLMSource):
                 'character': 'Example',
                 'instruction_template': 'Vicuna-v1.1',  # Will get autodetected if unset
                 'your_name': 'You',
-                # 'name1': 'name of user', # Optional
-                # 'name2': 'name of character', # Optional
-                # 'context': 'character context', # Optional
-                # 'greeting': 'greeting', # Optional
-                # 'name1_instruct': 'You', # Optional
-                # 'name2_instruct': 'Assistant', # Optional
-                # 'context_instruct': 'context_instruct', # Optional
-                # 'turn_template': 'turn_template', # Optional
                 'regenerate': False,
                 '_continue': False,
                 'chat_instruct_command': 'Continue the chat dialogue below. Write a single reply for the character "<|character|>".\n\n<|prompt|>',
