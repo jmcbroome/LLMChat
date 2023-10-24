@@ -99,11 +99,8 @@ class BufferAudioSink(discord.AudioSink):
         dtype = np.int16
         buffer_size = len(voice_data.audio) // np.dtype(dtype).itemsize
         frame = np.frombuffer(voice_data.audio, dtype=dtype, count=buffer_size)
-        try:
-            frame = frame.reshape((2, -1))
-            frame = np.transpose(frame)
-        except ValueError:
-            pass
+        if frame.shape == (1920,):
+            frame = frame.reshape(960,2)
 
         speaking = np.abs(frame).max() > 10
 
