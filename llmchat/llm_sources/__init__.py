@@ -9,7 +9,7 @@ class LLMSource:
         self.db = db
         self.client = client
 
-    async def generate_response(self, invoker: User = None, channel_id: int = -1) -> str:
+    async def generate_response(self, invoker: User = None, channel = None) -> str:
         return NotImplementedError()
 
     async def list_models(self) -> list[SelectOption]:

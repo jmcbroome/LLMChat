@@ -534,7 +534,8 @@ class DiscordClient(discord.Client):
         elif self.config.use_local_embeddings:
             embedding = embedding_model.encode([message])[0]
             #reformat the embedding list to a list of comma-separated strings
-            embedding_str = ",".join([str(v) for v in embedding])
+            embedding_str = ",".join([str(v) for v in list(embedding)])
+            #logger.debug(embedding_str)
             self.db.add_embedding(message, embedding_str)
             logger.debug("Added embedding for message " + str(message_id))
 
@@ -652,7 +653,7 @@ class DiscordClient(discord.Client):
 
         async with message.channel.typing():
             try:
-                response = await self.llm.generate_response(invoker=message.author, channel_id=message.channel.id)
+                response = await self.llm.generate_response(invoker=message.author, channel=message.channel)
             except Exception as e:
                 view = discord.ui.View()
                 retry_btn = discord.ui.Button(label="Retry")

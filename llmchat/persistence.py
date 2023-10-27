@@ -168,6 +168,7 @@ class PersistentData:
         row = self.cursor.fetchone()
         if row is not None:
             embedding_str = row[0]
+            print(embedding_str)
             embedding = [float(e) for e in embedding_str.split(',')]
             return embedding
         else:

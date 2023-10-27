@@ -10,6 +10,8 @@ from llmchat.logger import logger
 import discord
 import requests
 import json
+import datetime
+import pytz
 
 class OobaClient(LLMSource):
     """
@@ -49,9 +51,10 @@ class OobaClient(LLMSource):
             final_messages.append(fmt_message)
         return final_messages
 
-    async def get_recent_discord_messages(self, channel_id, N, T):
-        messages = await channel.history(limit=N).flatten()
-        current_time = datetime.datetime.utcnow()
+    async def get_recent_discord_messages(self, channel, N, T):
+        messages = [m async for m in channel.history(limit=N)]
+        current_time = datetime.datetime.now(pytz.utc)
+        current_time = current_time.astimezone(pytz.timezone('US/Pacific'))
         recent_messages = []
 
         for message in messages:
@@ -61,7 +64,7 @@ class OobaClient(LLMSource):
 
         return recent_messages
 
-    async def get_prompt(self, invoker: discord.User = None, channel_id: int = -1) -> str:
+    async def get_prompt(self, invoker: discord.User = None, channel = None) -> str:
         initial = self.get_initial(invoker)
         all_messages = self.db.get_recent_messages()
         recent_messages = all_messages[-self.config.llm_context_messages_count:]
@@ -81,26 +84,25 @@ class OobaClient(LLMSource):
         for memory in memories:
              context.append(memory)
         context.append("###CURRENT CONVERSATION:")
-        #a -1 channel ID indicates this was a voice message. Take recent entries from the DB as context.
         current_conversation = []
-        if channel_id == -1:
-            current_conversation = await self.add_author_to_messages(recent_messages)
-        #otherwise, fetch recent messages directly from the relevant channel.
-        else:
+        if channel != None:
+            logger.debug(f"Trying to fetch history from channel ID: {channel.id}")
             #TODO: allow N and T to be set as parameters in the config.
             N = 15 #15 most recent messages. In practice, we probably want to use token limits and fetch as much as we can.
             T = 24 * 60 * 60 #number of seconds in a day
-            current_conversation = await self.get_recent_discord_messages(channel_id, N, T)
-
+            current_conversation = await self.get_recent_discord_messages(channel, N, T)
+        else:
+            #otherwise, fetch recent messages directly from the relevant channel.
+            current_conversation = await self.add_author_to_messages(recent_messages)
         for message in current_conversation:
             context.append(message)
         return "\n".join(context)
 
     async def generate_response(
-        self, invoker: discord.User = None, channel_id: int = -1
+        self, invoker: discord.User = None, channel = None
     ) -> str:
             # completion_tokens = self.config.llm_max_tokens
-            prompt = await self.get_prompt(invoker)
+            prompt = await self.get_prompt(invoker, channel)
             logger.debug(prompt)
             request = {
                 'user_input': prompt,
