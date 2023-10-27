@@ -49,13 +49,39 @@ class OobaClient(LLMSource):
             final_messages.append(fmt_message)
         return final_messages
 
+    # Function to get the channel from a message ID
+    async def get_channel_from_message_id(self, message_id):
+        try:
+            message = await self.client.fetch_message(message_id)
+            channel = message.channel
+            return channel
+        except discord.NotFound:
+            print(f"Message with ID {message_id} not found.")
+            return None
+
+    # Function to get the N most recent messages within time T
+    async def get_recent_discord_messages(self, message_id, N, T):
+        channel = await self.get_channel_from_message_id(message_id)
+        if channel == None:
+            return []
+        messages = await channel.history(limit=N).flatten()
+        current_time = datetime.datetime.utcnow()
+        recent_messages = []
+
+        for message in messages:
+            time_diff = (current_time - message.created_at).total_seconds()
+            if time_diff <= T:
+                recent_messages.append(message.clean_content)
+
+        return recent_messages
+
     async def get_prompt(self, invoker: discord.User = None) -> str:
         initial = self.get_initial(invoker)
         all_messages = self.db.get_recent_messages()
         recent_messages = all_messages[-self.config.llm_context_messages_count:]
         ooc_messages = all_messages[:-self.config.llm_context_messages_count]  # everything but the messages in the context limit
         similar_messages = []
-        if self.config.openai_use_embeddings and ooc_messages:
+        if (self.config.openai_use_embeddings or self.config.use_local_embeddings) and ooc_messages:
             similar_matches = self.similar_messages(recent_messages[-1], ooc_messages)
             if similar_matches:
                 logger.debug("Bot will be reminded of:\n\t"+'\n\t'.join([f"{message[1]} ({round(similarity * 100)}% similar)" for message, similarity in similar_matches]))
@@ -69,10 +95,19 @@ class OobaClient(LLMSource):
         for memory in memories:
              context.append(memory)
         context.append("###CURRENT CONVERSATION:")
-        current_conversation = await self.add_author_to_messages(recent_messages)
+        #a -1 message ID indicates this was a voice message. Take recent entries from the DB as context since discord doesn't record this in a nice linear way.
+        current_conversation = []
+        if initial[-1] == -1:
+            current_conversation = await self.add_author_to_messages(recent_messages)
+        #otherwise, fetch recent messages directly from the relevant channel.
+        else:
+            #TODO: allow N and T to be set as parameters in the config.
+            N = 15 #15 most recent messages. In practice, we probably want to use token limits and fetch as much as we can.
+            T = 24 * 60 * 60 #number of seconds in a day
+            current_conversation = await self.get_recent_discord_messages(self, initial[-1], N, T)
+
         for message in current_conversation:
-             context.append(message)
-        logger.debug(context)
+            context.append(message)
         return "\n".join(context)
 
     async def generate_response(
@@ -136,5 +171,4 @@ class OobaClient(LLMSource):
 
             if response.status_code == 200:
                 result = response.json()
-                logger.debug(result['results'][0]['history']['internal'][0][-1])
                 return result['results'][0]['history']['internal'][0][-1]
