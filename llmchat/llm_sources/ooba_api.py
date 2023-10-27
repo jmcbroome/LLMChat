@@ -49,21 +49,7 @@ class OobaClient(LLMSource):
             final_messages.append(fmt_message)
         return final_messages
 
-    # Function to get the channel from a message ID
-    async def get_channel_from_message_id(self, message_id):
-        try:
-            message = await self.client.fetch_message(message_id)
-            channel = message.channel
-            return channel
-        except discord.NotFound:
-            print(f"Message with ID {message_id} not found.")
-            return None
-
-    # Function to get the N most recent messages within time T
-    async def get_recent_discord_messages(self, message_id, N, T):
-        channel = await self.get_channel_from_message_id(message_id)
-        if channel == None:
-            return []
+    async def get_recent_discord_messages(self, channel_id, N, T):
         messages = await channel.history(limit=N).flatten()
         current_time = datetime.datetime.utcnow()
         recent_messages = []
@@ -75,7 +61,7 @@ class OobaClient(LLMSource):
 
         return recent_messages
 
-    async def get_prompt(self, invoker: discord.User = None) -> str:
+    async def get_prompt(self, invoker: discord.User = None, channel_id: int = -1) -> str:
         initial = self.get_initial(invoker)
         all_messages = self.db.get_recent_messages()
         recent_messages = all_messages[-self.config.llm_context_messages_count:]
@@ -95,23 +81,23 @@ class OobaClient(LLMSource):
         for memory in memories:
              context.append(memory)
         context.append("###CURRENT CONVERSATION:")
-        #a -1 message ID indicates this was a voice message. Take recent entries from the DB as context since discord doesn't record this in a nice linear way.
+        #a -1 channel ID indicates this was a voice message. Take recent entries from the DB as context.
         current_conversation = []
-        if initial[-1] == -1:
+        if channel_id == -1:
             current_conversation = await self.add_author_to_messages(recent_messages)
         #otherwise, fetch recent messages directly from the relevant channel.
         else:
             #TODO: allow N and T to be set as parameters in the config.
             N = 15 #15 most recent messages. In practice, we probably want to use token limits and fetch as much as we can.
             T = 24 * 60 * 60 #number of seconds in a day
-            current_conversation = await self.get_recent_discord_messages(self, initial[-1], N, T)
+            current_conversation = await self.get_recent_discord_messages(channel_id, N, T)
 
         for message in current_conversation:
             context.append(message)
         return "\n".join(context)
 
     async def generate_response(
-        self, invoker: discord.User = None, _retry_count=0
+        self, invoker: discord.User = None, channel_id: int = -1
     ) -> str:
             # completion_tokens = self.config.llm_max_tokens
             prompt = await self.get_prompt(invoker)

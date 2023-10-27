@@ -652,7 +652,7 @@ class DiscordClient(discord.Client):
 
         async with message.channel.typing():
             try:
-                response = await self.llm.generate_response(invoker=message.author)
+                response = await self.llm.generate_response(invoker=message.author, channel_id=message.channel.id)
             except Exception as e:
                 view = discord.ui.View()
                 retry_btn = discord.ui.Button(label="Retry")
