@@ -73,7 +73,7 @@ class LLaMA(LLMSource):
         ret = ""
         start_time = time.time()
         for chunk in self.model.stream(context, stop=["\n"]):
-            ret += chunk["choices"][0]["text"]
+            ret += chunk
             logger.debug(ret)
 
         logger.debug(f"Generation took {time.time() - start_time}s")
