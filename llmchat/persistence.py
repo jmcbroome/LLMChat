@@ -153,7 +153,7 @@ class PersistentData:
 
     def add_embedding(self, message: tuple[int, str, int], embedding: list[float]):
         author_id, content, message_id = message
-        embedding_str = ','.join(str(e) for e in embedding)
+        embedding_str = ','.join([str(e) for e in embedding])
         self.cursor.execute(
             "INSERT INTO message_embeddings VALUES (?, ?, ?, ?)",
             (author_id, embedding_str, content, message_id),

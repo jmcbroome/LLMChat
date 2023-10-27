@@ -57,10 +57,12 @@ class OobaClient(LLMSource):
         current_time = current_time.astimezone(pytz.timezone('US/Pacific'))
         recent_messages = []
 
-        for message in messages:
+        for message in messages[::-1]:
             time_diff = (current_time - message.created_at).total_seconds()
             if time_diff <= T:
-                recent_messages.append(message.clean_content)
+                recent_messages.append(message.author.name + ":" + message.clean_content)
+            else:
+                break
 
         return recent_messages
 

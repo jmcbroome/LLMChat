@@ -532,11 +532,8 @@ class DiscordClient(discord.Client):
                 self.db.add_embedding(message, embedding['data'][0]['embedding'])
                 logger.debug("Added embedding for message " + str(message_id))
         elif self.config.use_local_embeddings:
-            embedding = embedding_model.encode([message])[0]
-            #reformat the embedding list to a list of comma-separated strings
-            embedding_str = ",".join([str(v) for v in list(embedding)])
-            #logger.debug(embedding_str)
-            self.db.add_embedding(message, embedding_str)
+            embedding = list(embedding_model.encode([message])[0])
+            self.db.add_embedding(message, embedding)
             logger.debug("Added embedding for message " + str(message_id))
 
     async def on_speech(self, speaker_id, speech):
