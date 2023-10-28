@@ -1,10 +1,10 @@
 from logger import logger
 from PIL.Image import Image
+import torch
+from transformers import BlipProcessor, BlipForConditionalGeneration
 
 class BLIP:
     def __init__(self):
-        from transformers import BlipProcessor, BlipForConditionalGeneration
-        import torch
         logger.info("Loading BLIP model...")
         self.processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-large")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
