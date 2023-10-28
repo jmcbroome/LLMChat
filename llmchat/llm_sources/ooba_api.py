@@ -56,7 +56,7 @@ class OobaClient(LLMSource):
         current_time = datetime.datetime.now(pytz.utc)
         current_time = current_time.astimezone(pytz.timezone('US/Pacific'))
         recent_messages = []
-
+        #skip the most recent message; already included as the initial message content.
         for message in messages[::-1]:
             time_diff = (current_time - message.created_at).total_seconds()
             if time_diff <= T:
@@ -93,11 +93,15 @@ class OobaClient(LLMSource):
             N = 15 #15 most recent messages. In practice, we probably want to use token limits and fetch as much as we can.
             T = 24 * 60 * 60 #number of seconds in a day
             current_conversation = await self.get_recent_discord_messages(channel, N, T)
+            for message in current_conversation[:-1]:
+                context.append(message)
+            #add the most recent message as-recorded. This allows for compatibility with BLIP and similar implementations.
+            context.append(recent_messages[-1][1])
         else:
             #otherwise, fetch recent messages directly from the relevant channel.
             current_conversation = await self.add_author_to_messages(recent_messages)
-        for message in current_conversation:
-            context.append(message)
+            for message in current_conversation:
+                context.append(message)
         return "\n".join(context)
 
     async def generate_response(
