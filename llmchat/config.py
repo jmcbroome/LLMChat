@@ -88,6 +88,24 @@ class Config:
         self.save()
 
     @property
+    def character(self) -> str:
+        return self._config.get("Oobabooga", "character")
+
+    @character.setter
+    def character(self, character):
+        self._config.set("Oobabooga", "character", str(character))
+        self.save()
+
+    @property
+    def ooba_preset(self) -> str:
+        return self._config.get("Oobabooga", "preset")
+
+    @ooba_preset.setter
+    def ooba_preset(self, preset):
+        self._config.set("Oobabooga", "preset", str(preset))
+        self.save()
+
+    @property
     def llm_context_messages_count(self) -> int:
         return self._config.getint("LLM", "context_messages_count")
 
