@@ -95,7 +95,7 @@ class OobaClient(LLMSource):
             logger.debug(f"Trying to fetch history from channel ID: {channel.id}")
             #TODO: allow N and T to be set as parameters in the config.
             #no technical reason this needs to be the same value as the N most recent messages excluded from memory/N most recent used for voice context but probably has reasonable behavior
-            N = self.config.context_messages_count 
+            N = self.config.llm_context_messages_count 
             T = 24 * 60 * 60 #number of seconds in a day- thus excluding messages from discord history that are more than a day old.
             current_conversation = await self.get_recent_discord_messages(channel, N, T)
             for message in current_conversation[:-1]:
