@@ -27,7 +27,7 @@ class OobaClient(LLMSource):
         # get embedding for last message
         last_message_embedding = self.db.query_embedding(last_message[2])
         if last_message_embedding:
-            similar_matches = self.db.get_most_similar(last_message_embedding, threshold=similarity_threshold, messages_pool=messages_pool)[:self.config.openai_max_similar_messages]
+            similar_matches = self.db.get_most_similar(last_message_embedding, threshold=similarity_threshold, messages_pool=messages_pool, include_previous_message=self.config.memory_include_previous_message)[:self.config.openai_max_similar_messages]
         else:
             logger.warn("Unable to find embedding for message " + last_message[2])
         return similar_matches

@@ -106,12 +106,21 @@ class Config:
         self.save()
 
     @property
+    def memory_include_previous_message(self) -> bool:
+        return self._config.getboolean("LLM", "memory_include_previous_message", fallback=False)
+    
+    @memory_include_previous_message.setter
+    def memory_include_previous_message(self, state):
+        self._config.set("LLM", "memory_include_previous_message")
+        self.save()
+
+    @property
     def auto_join_voice(self) -> bool:
         return self._config.getboolean("Bot", "auto_join_voice", fallback=False)
 
     @auto_join_voice.setter
     def auto_join_voice(self, state):
-        self._config.get("Bot", "auto_join_voice", state)
+        self._config.set("Bot", "auto_join_voice", state)
         self.save()
 
     @property

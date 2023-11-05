@@ -173,15 +173,21 @@ class PersistentData:
         else:
             return None
 
-    def get_most_similar(self, embedding: list[float], threshold=0.0, messages_pool: list[tuple[int, str, int]] = None):
+    def get_most_similar(self, embedding: list[float], threshold=0.0, messages_pool: list[tuple[int, str, int]] = None, include_previous_message: bool = False):
         all_embeddings = []
+        prev_message = None
         for m in messages_pool or self.get_recent_messages():
             author_id, content, mid = m
             message_embedding = self.query_embedding(mid)
             if message_embedding:
                 similarity = 1 - spatial.distance.cosine(embedding, message_embedding)
                 if similarity != 1 and similarity >= threshold:  # if the similarity is 1 it's the same message
-                    all_embeddings.append((m, similarity))
+                    #include the preceding message regardless of content, if the preceding message is not identical to the last message independently added via similarity
+                    if include_previous_message and prev_message != None and content != prev_message[1]:
+                        all_embeddings.append((prev_message, similarity))
+                    else:
+                        all_embeddings.append((m, similarity))
+            prev_message = m
 
         # sort based on similarity
         all_embeddings.sort(key=lambda x: x[1], reverse=True)
