@@ -185,8 +185,7 @@ class PersistentData:
                     #include the preceding message regardless of content, if the preceding message is not identical to the last message independently added via similarity
                     if include_previous_message and prev_message != None and content != prev_message[1]:
                         all_embeddings.append((prev_message, similarity))
-                    else:
-                        all_embeddings.append((m, similarity))
+                    all_embeddings.append((m, similarity))
             prev_message = m
 
         # sort based on similarity
