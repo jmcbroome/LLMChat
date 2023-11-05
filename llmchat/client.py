@@ -124,6 +124,13 @@ class DiscordClient(discord.Client):
                 callback=self.reload_config,
             )
         )
+        self.tree.add_command(
+            app_commands.Command(
+                name='join_voice',
+                description="Join the user's voice channel, if they are in one.",
+                callback=self.join_voice,
+            )
+        )
 
         if self.config.bot_blip_enabled:
             self.blip = BLIP()
@@ -188,6 +195,56 @@ class DiscordClient(discord.Client):
             self.sr = Azure(*params)
         else:
             logger.critical(f"Unknown speech recognition service: {self.config.bot_speech_recognition_service}")
+
+    #copied from Chris Rude's Oobabot implementation
+    async def _discover_voice_channel(self, interaction: discord.Interaction):
+        if isinstance(interaction.user, discord.Member):
+            # if invoked from a guild channel, join the voice channel
+            # the invoker is in, within that guild
+            if (
+                interaction.user.voice is not None
+                and interaction.user.voice.channel is not None
+                and isinstance(interaction.user.voice.channel, discord.VoiceChannel)
+            ):
+                return interaction.user.voice.channel
+
+        # if invoked from a private message, look at all guilds
+        # which have both the bot and the invoking user as a member,
+        # find find the first such guild where the user is in a voice
+        # channel.
+        for guild in interaction.user.mutual_guilds:
+            # get member of guild
+            member = guild.get_member(interaction.user.id)
+            if (
+                member is not None
+                and member.voice is not None
+                and member.voice.channel is not None
+                and isinstance(member.voice.channel, discord.VoiceChannel)
+            ):
+                return member.voice.channel
+        return None
+
+    async def join_voice(self, ctx: Interaction):
+        logger.debug("/join_voice called by user '%s'", ctx.user.name)
+        if ctx.user.guild.voice_client is None:
+            voice_channel = await self._discover_voice_channel(ctx)
+            if voice_channel == None:
+                msg = "/join_voice failed! Is the invoker in an available voice channel?"
+                await ctx.response.send_message(msg, ephemeral=True, silent=True)
+                logger.debug(msg)
+                return 
+            vc: discord.VoiceClient = await voice_channel.connect()
+            await ctx.response.send_message("Joined voice channel.", ephemeral=True, silent=True)
+            try:
+                vc.init_audio_processing_pool(max_processes=4, wait_timeout=3)
+                logger.debug("Initialized audio processing pool.")
+            except RuntimeError:
+                logger.debug("Audio processing pool already initialized; continuing.")
+            if self.config.bot_audiobook_mode:
+                return
+            self.sink = BufferAudioSink(self.sr, self.on_speech, self.loop)
+            vc.listen(self.sink)
+            
 
     async def reload_config(self, ctx: Interaction):
         await ctx.response.defer()
@@ -566,7 +623,7 @@ class DiscordClient(discord.Client):
             # member left channel, check to see if there are any more members there
             if len(before.channel.members) == 1 and member.guild.voice_client:
                 await member.guild.voice_client.disconnect(force=True)
-        elif before.channel is None and after.channel is not None:
+        elif before.channel is None and after.channel is not None and self.config.auto_join_voice:
             # member joined channel, join if you haven't already
             if member.guild.voice_client is None:
                 vc: discord.VoiceClient = await after.channel.connect()

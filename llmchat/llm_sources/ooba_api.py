@@ -68,7 +68,9 @@ class OobaClient(LLMSource):
 
     @property
     def current_model_name(self) -> str:
-        return "Oobabooga API"
+        host = str(self.config.oobabooga_listen_port)
+        uri = f'http://{host}/api/v1/model'
+        return requests.get(uri).json()['result']
 
     async def get_prompt(self, invoker: discord.User = None, channel = None) -> str:
         initial = self.get_initial(invoker)
@@ -164,7 +166,7 @@ class OobaClient(LLMSource):
                 'ban_eos_token': False,
                 'custom_token_bans': '',
                 'skip_special_tokens': True,
-                'stopping_strings': []
+                'stopping_strings': ['\n']
             }
             host = str(self.config.oobabooga_listen_port)
             uri = f'http://{host}/api/v1/chat'

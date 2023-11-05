@@ -106,6 +106,15 @@ class Config:
         self.save()
 
     @property
+    def auto_join_voice(self) -> bool:
+        return self._config.getboolean("Bot", "auto_join_voice", fallback=False)
+
+    @auto_join_voice.setter
+    def auto_join_voice(self, state):
+        self._config.get("Bot", "auto_join_voice", state)
+        self.save()
+
+    @property
     def llm_context_messages_count(self) -> int:
         return self._config.getint("LLM", "context_messages_count")
 
