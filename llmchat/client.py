@@ -8,7 +8,6 @@ from discord import app_commands
 from discord.interactions import Interaction
 import openai
 from sentence_transformers import SentenceTransformer
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 from aiohttp import ClientSession
 import ui_extensions
@@ -35,7 +34,9 @@ class DiscordClient(discord.Client):
 
     def __init__(self, config: Config):
         self.config = config
-
+        self.embedding_model = None
+        if self.config.use_local_embeddings:
+            self.embedding_model = SentenceTransformer('jinaai/jina-embedding-s-en-v1')
         if not self.config.can_interact_with_channel_id(-1) and not self.config.discord_active_channels:
             raise Exception(
                 "There aren't any active channels specified in your config.ini! Please add text/voice channel ids to Discord.active_channels (seperated by commas),"
@@ -589,7 +590,7 @@ class DiscordClient(discord.Client):
                 self.db.add_embedding(message, embedding['data'][0]['embedding'])
                 logger.debug("Added embedding for message " + str(message_id))
         elif self.config.use_local_embeddings:
-            embedding = list(embedding_model.encode([message])[0])
+            embedding = list(self.embedding_model.encode([message])[0])
             self.db.add_embedding(message, embedding)
             logger.debug("Added embedding for message " + str(message_id))
 
