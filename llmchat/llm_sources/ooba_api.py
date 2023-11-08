@@ -32,22 +32,27 @@ class OobaClient(LLMSource):
             logger.warn("Unable to find embedding for message " + last_message[2])
         return similar_matches
 
+    async def format_with_author(self, message):
+        fmt_message = ""
+        author_id, content, message_id = message
+        if author_id == -1:
+            #do nothing to the message content if the author is not available
+            return content
+        elif author_id == self.client.user.id:
+            fmt_message = f"{self.config.bot_name}: {content}"
+        else:
+            name = (await self.client.fetch_user(author_id)).display_name
+            identity = self.db.get_identity(author_id)
+            if identity is not None:
+                name_, identity = identity
+                name = name_
+            fmt_message = f"{name}: {content}"
+        return fmt_message
+
     async def add_author_to_messages(self, messages):
         final_messages = []
         for i in messages:
-            fmt_message = ""
-            author_id, content, message_id = i
-            if author_id == -1:
-                continue
-            elif author_id == self.client.user.id:
-                fmt_message += f"{self.config.bot_name}: {content}"
-            else:
-                name = (await self.client.fetch_user(author_id)).display_name
-                identity = self.db.get_identity(author_id)
-                if identity is not None:
-                    name_, identity = identity
-                    name = name_
-                fmt_message += f"{name}: {content}"
+            fmt_message = await self.format_with_author(i)
             final_messages.append(fmt_message)
         return final_messages
 
@@ -63,7 +68,6 @@ class OobaClient(LLMSource):
                 recent_messages.append(message.author.name + ":" + message.clean_content)
             else:
                 break
-
         return recent_messages
 
     @property
@@ -103,7 +107,9 @@ class OobaClient(LLMSource):
             for message in current_conversation[:-1]:
                 context.append(message)
             #add the most recent message as-recorded. This allows for compatibility with BLIP and similar implementations.
-            context.append(recent_messages[-1][1])
+            #this means that we need to prepend the author, though. 
+            current_message = await self.format_with_author(recent_messages[-1])
+            context.append(current_message)
         else:
             #otherwise, fetch recent messages directly from the relevant channel.
             current_conversation = await self.add_author_to_messages(recent_messages)
@@ -166,7 +172,7 @@ class OobaClient(LLMSource):
                 'ban_eos_token': False,
                 'custom_token_bans': '',
                 'skip_special_tokens': True,
-                'stopping_strings': ['\n']
+                'stopping_strings': []
             }
             host = str(self.config.oobabooga_listen_port)
             uri = f'http://{host}/api/v1/chat'
