@@ -26,7 +26,8 @@ class BufferAudioSink(discord.AudioSink):
         self.speaker = None
         self.is_speaking = False
         self._last_spoke = time.time()
-        self.silence_limit = 1.5  # seconds
+        #TODO: add silence limit to config
+        self.silence_limit = 0.5  # seconds
 
         # self.stream = DummyAudioSource(self)
         self.sr = sr.Recognizer()

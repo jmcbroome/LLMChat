@@ -120,13 +120,12 @@ class OobaClient(LLMSource):
     async def generate_response(
         self, invoker: discord.User = None, channel = None
     ) -> str:
-            # completion_tokens = self.config.llm_max_tokens
             prompt = await self.get_prompt(invoker, channel)
             logger.debug(prompt)
             request = {
                 'user_input': prompt,
                 'max_new_tokens': int(self.config.llm_max_tokens),
-                'auto_max_new_tokens': False,
+                'auto_max_new_tokens': True,
                 'max_tokens_second': 0,
                 'history': {'internal':[],'visible':[]},
                 'mode': 'chat',  # Valid options: 'chat', 'chat-instruct', 'instruct'
