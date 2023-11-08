@@ -389,10 +389,10 @@ class Config:
         self.save()
 
     @property
-    def xtts_voice_id(self) -> str:
+    def xtts_voice(self) -> str:
         return self._config.get("XTTS", "xtts_voice")
     
-    @xtts_voice_id.setter
-    def xtts_voice_id(self, voice):
+    @xtts_voice.setter
+    def xtts_voice(self, voice):
         self._config.set("XTTS", "xtts_voice", voice)
         self.save()
