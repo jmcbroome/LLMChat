@@ -387,3 +387,12 @@ class Config:
     def playht_voice_id(self, voice_id):
         self._config.set("Play.ht", "voice_id", voice_id)
         self.save()
+
+    @property
+    def xtts_voice_id(self) -> str:
+        return self._config.get("XTTS", "xtts_voice")
+    
+    @xtts_voice_id.setter
+    def xtts_voice_id(self, voice):
+        self._config.set("XTTS", "xtts_voice", voice)
+        self.save()
