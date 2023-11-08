@@ -19,9 +19,9 @@ class XTTS(TTSSource):
     def __init__(self, client: Client, config: Config, db: PersistentData):
         super(XTTS, self).__init__(client, config, db)
         config = XttsConfig()
-        config.load_json("models/XTTS-v1/config.json")
+        config.load_json("models/XTTS-v2/config.json")
         self.model = Xtts.init_from_config(config)
-        self.model.load_checkpoint(config, checkpoint_dir="models/XTTS-v1/", eval=True)
+        self.model.load_checkpoint(config, checkpoint_dir="models/XTTS-v2/", eval=True)
         if torch.cuda.is_available():
             self.model.cuda()
         logger.info("Loaded XTTS model.")
