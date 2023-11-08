@@ -21,14 +21,12 @@ class XTTS(TTSSource):
         config = XttsConfig()
         config.load_json("models/XTTS-v2/config.json")
         self.model = Xtts.init_from_config(config)
-        self.model.load_checkpoint(config, checkpoint_dir="models/XTTS-v2/", eval=True)
+        self.model.load_checkpoint(config, checkpoint_dir="models/XTTS-v2/")
         if torch.cuda.is_available():
             self.model.cuda()
         logger.info("Loaded XTTS model.")
 
     async def generate_speech(self, content: str) -> io.BufferedIOBase:
-        # audio: torch.Tensor = await self.client.loop.run_in_executor(None, lambda: self.model.tts(text=content, sample_rate=48000, speaker=self.config.silero_voice))
-        # audio = audio.unsqueeze(0)
         gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(audio_path=[self.config.xtts_voice])
         out = model.inference(
             content,
