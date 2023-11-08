@@ -161,7 +161,7 @@ class DiscordClient(discord.Client):
         elif self.config.bot_tts_service == "play.ht":
             from tts_sources.playht import PlayHt
             self.tts = PlayHt(*params)
-        elif self.config.bot_tts_service == "XTTS":
+        elif self.config.bot_tts_service == "xtts":
             from tts_sources.xtts import XTTS
             self.tts = XTTS(*params)
         else:
