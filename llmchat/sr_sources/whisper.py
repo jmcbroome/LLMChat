@@ -13,11 +13,12 @@ class Whisper(SRSource):
         super(Whisper, self).__init__(client, config, db)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Loading whisper model on {self.device}")
-        #alternative- use whisper-large-v2 if you have several extra gigabytes of VRAM for better accuracy
+        #alternative- use whisper-large-v3 if you have several extra gigabytes of VRAM for better accuracy
         #TODO: implement this into configuration options when I redo the overall configuration
-        self.model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-base.en", cache_dir="models/whisper").to(self.device)
-        self.tokenizer = WhisperTokenizerFast.from_pretrained("openai/whisper-base.en", cache_dir="models/whisper")
-        self.processor = WhisperProcessor.from_pretrained("openai/whisper-base.en", cache_dir="models/whisper", tokenizer=self.tokenizer)
+        #also distil-whisper/distil-large-v2 or distil-whisper/distil-medium.en
+        self.model = WhisperForConditionalGeneration.from_pretrained("distil-whisper/distil-medium.en", cache_dir="models/whisper").to(self.device)
+        self.tokenizer = WhisperTokenizerFast.from_pretrained("distil-whisper/distil-medium.en", cache_dir="models/whisper")
+        self.processor = WhisperProcessor.from_pretrained("distil-whisper/distil-medium.en", cache_dir="models/whisper", tokenizer=self.tokenizer)
 
     def recognize_speech(self, data: AudioData):
         resampled = data.get_raw_data(convert_rate=16_000)
