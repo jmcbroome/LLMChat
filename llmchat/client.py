@@ -161,6 +161,9 @@ class DiscordClient(discord.Client):
         elif self.config.bot_tts_service == "play.ht":
             from tts_sources.playht import PlayHt
             self.tts = PlayHt(*params)
+        elif self.config.bot_tts_service == "XTTS":
+            from tts_sources.xtts import XTTS
+            self.tts = XTTS(*params)
         else:
             logger.critical(f"Unknown TTS service: {self.config.bot_tts_service}")
 
