@@ -664,7 +664,11 @@ class DiscordClient(discord.Client):
 
     async def say(self, text: str, vc: discord.VoiceClient, text_channel_ctx: discord.TextChannel = None, after=None):
         try:
-            buf: io.BytesIO = await self.tts.generate_speech(text)
+            #filter to the first 1000 symbols to prevent TTS collapse
+            if len(text) >= 1000:
+                logger.warn("TTS input over 1000 characters long! Truncating")
+                text = text[:1000]
+            buf: io.BytesIO = await self.tts.generate_speech(text) 
             vc.stop()
             # for now i have to write this to a file so ffmpeg won't strip the last part.
             with open("temp.wav", "wb") as f:
