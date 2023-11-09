@@ -28,7 +28,7 @@ class XTTS(TTSSource):
 
     async def generate_speech(self, content: str) -> io.BufferedIOBase:
         gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(audio_path=[self.config.xtts_voice])
-        out = model.inference(
+        out = self.model.inference(
             content,
             "en",
             gpt_cond_latent,
@@ -36,7 +36,7 @@ class XTTS(TTSSource):
             temperature=0.7, # Add custom parameters here
         )
         buf = io.BytesIO()
-        torchaudio.save(buf, torch.tensor(out["wav"]).unsqueeze(0), 24000)
+        torchaudio.save(buf, torch.tensor(out["wav"]).unsqueeze(0), 24000, format='wav')
         buf.seek(0)
         return buf
 
