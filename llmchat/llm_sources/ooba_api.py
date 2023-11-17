@@ -114,6 +114,8 @@ class OobaClient(LLMSource):
             current_conversation = await self.add_author_to_messages(recent_messages)
             for message in current_conversation:
                 context.append(message)
+        #add the name to indicate to the LLM that the bot is the next speaker
+        context.append(f"{self.config.bot_name}:")
         return "\n".join(context)
 
     async def generate_response(
@@ -121,6 +123,7 @@ class OobaClient(LLMSource):
     ) -> str:
             prompt = await self.get_prompt(invoker, channel)
             logger.debug(prompt)
+            #TODO: use chat completion endpoint in some smarter way + use smarter stopping strings to allow the bot to send multiple consecutive messages
             request = {
                 'prompt': prompt,
                 'max_tokens': int(self.config.llm_max_tokens),
