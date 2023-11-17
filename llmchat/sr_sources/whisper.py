@@ -13,9 +13,8 @@ class Whisper(SRSource):
         super(Whisper, self).__init__(client, config, db)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Loading whisper model on {self.device}")
-        #alternative- use whisper-large-v3 if you have several extra gigabytes of VRAM for better accuracy
         #TODO: implement this into configuration options when I redo the overall configuration
-        #also distil-whisper/distil-large-v2 or distil-whisper/distil-medium.en
+        #distil-whisper/distil-large-v2 or distil-whisper/distil-medium.en
         self.model = WhisperForConditionalGeneration.from_pretrained("distil-whisper/distil-medium.en", cache_dir="models/whisper").to(self.device)
         self.tokenizer = WhisperTokenizerFast.from_pretrained("distil-whisper/distil-medium.en", cache_dir="models/whisper")
         self.processor = WhisperProcessor.from_pretrained("distil-whisper/distil-medium.en", cache_dir="models/whisper", tokenizer=self.tokenizer)
