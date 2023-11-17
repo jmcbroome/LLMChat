@@ -72,9 +72,8 @@ class OobaClient(LLMSource):
 
     @property
     def current_model_name(self) -> str:
-        host = str(self.config.oobabooga_listen_port)
-        uri = f'http://{host}/api/v1/model'
-        return requests.get(uri).json()['result']
+        #TODO: get model fetching working again with new OpenAI mimic API
+        return "Ooba API"
 
     async def get_prompt(self, invoker: discord.User = None, channel = None) -> str:
         initial = self.get_initial(invoker)
@@ -123,60 +122,17 @@ class OobaClient(LLMSource):
             prompt = await self.get_prompt(invoker, channel)
             logger.debug(prompt)
             request = {
-                'user_input': prompt,
-                'max_new_tokens': int(self.config.llm_max_tokens),
-                'auto_max_new_tokens': True,
-                'max_tokens_second': 0,
-                'history': {'internal':[],'visible':[]},
-                'mode': 'chat',  # Valid options: 'chat', 'chat-instruct', 'instruct'
-                'character': self.config.character,
-                # 'instruction_template': 'Vicuna-v1.1',  # Will get autodetected if unset
-                # 'your_name': 'You',
-                'regenerate': False,
-                '_continue': False,
-                'chat_instruct_command': 'Continue the chat dialogue below. Write a single reply for the character "<|character|>".\n\n<|prompt|>',
-
-                # Generation params. If 'preset' is set to different than 'None', the values
-                # in presets/preset-name.yaml are used instead of the individual numbers.
-                'preset': 'Midnight Enigma',
-                'do_sample': True,
-                'temperature': float(self.config.llm_temperature),
-                'top_p': 0.1,
-                'typical_p': 1,
-                'epsilon_cutoff': 0,  # In units of 1e-4
-                'eta_cutoff': 0,  # In units of 1e-4
-                'tfs': 1,
-                'top_a': 0,
-                'repetition_penalty': 1.18,
-                'repetition_penalty_range': 0,
-                'presence_penalty': float(self.config.llm_presence_penalty),
-                'frequency_penalty': float(self.config.llm_frequency_penalty),
-                'top_k': 40,
-                'min_length': 0,
-                'no_repeat_ngram_size': 0,
-                'num_beams': 1,
-                'penalty_alpha': 0,
-                'length_penalty': 1,
-                'early_stopping': False,
-                'mirostat_mode': 0,
-                'mirostat_tau': 5,
-                'mirostat_eta': 0.1,
-                'grammar_string': '',
-                'guidance_scale': 1,
-                'negative_prompt': '',
-
-                'seed': -1,
-                'add_bos_token': True,
-                'truncation_length': 2048,
-                'ban_eos_token': False,
-                'custom_token_bans': '',
-                'skip_special_tokens': True,
-                'stopping_strings': []
+                'prompt': prompt,
+                'max_tokens': int(self.config.llm_max_tokens),
+                'stop': "\n"
             }
             host = str(self.config.oobabooga_listen_port)
-            uri = f'http://{host}/api/v1/chat'
-            response = requests.post(uri, json=request)
-
+            uri = f'http://{host}/v1/completions'
+            headers = {
+               "Content-Type": "application/json"
+            }
+            response = requests.post(uri, json=request, headers=headers, verify=False)
             if response.status_code == 200:
                 result = response.json()
-                return result['results'][0]['history']['internal'][0][-1]
+                logger.debug(result)
+                return result['choices'][0]['text']
