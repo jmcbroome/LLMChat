@@ -118,6 +118,24 @@ class OobaClient(LLMSource):
         context.append(f"{self.config.bot_name}:")
         return "\n".join(context)
 
+    def clean_response(self, text):
+        #split the text so that it doesn't talk for people other than the chatbot
+        #this is really not efficient compared to using effective stopping strings
+        #and leads to generating a full fake set of dialogues 
+        #but I can't think of a better way to actually implement this
+        #without preventing the AI from actually producing the lists they love to make
+        #or having it talk for the user in an irritating way
+        ntext = []
+        for line in text.split("\n"):
+            #if it wants to continue without indicating speaker, assume its supposed to be included in the bot response and don't check.
+            if ":" in line:
+                #if its trying to fill in for anyone other than the bot, stop here.
+                speaker = line[:line.find(":")].strip()
+                if speaker != self.config.bot_name:
+                    break
+            ntext.append(line)
+        return "\n".join(ntext)
+
     async def generate_response(
         self, invoker: discord.User = None, channel = None
     ) -> str:
@@ -127,7 +145,7 @@ class OobaClient(LLMSource):
             request = {
                 'prompt': prompt,
                 'max_tokens': int(self.config.llm_max_tokens),
-                'stop': "\n"
+                'stop': f"\n{invoker.display_name}:"
             }
             host = str(self.config.oobabooga_listen_port)
             uri = f'http://{host}/v1/completions'
@@ -136,6 +154,6 @@ class OobaClient(LLMSource):
             }
             response = requests.post(uri, json=request, headers=headers, verify=False)
             if response.status_code == 200:
-                result = response.json()
+                result = response.json()['choices'][0]['text'].strip()
                 logger.debug(result)
-                return result['choices'][0]['text']
+                return self.clean_response(result)
