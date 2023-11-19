@@ -130,16 +130,14 @@ class OobaClient(LLMSource):
         for line in text.split("\n"):
             #if it wants to continue without indicating speaker, assume its supposed to be included in the bot response and don't check. 
             sline = line.strip()
-            if len(sline) == 0:
-                ntext.append(line)
-            else:
+            if len(sline) != 0:
                 ind = sline.find(" ")-1
                 if ":" == sline[ind]:
                     #if its trying to fill in for anyone other than the bot, stop here.
                     speaker = sline[:ind]
                     if speaker != self.config.bot_name:
                         break
-                ntext.append(line)
+            ntext.append(line)
         if len(ntext) == 0:
             logger.warn("Cleaned response is empty!")
         return "\n".join(ntext)

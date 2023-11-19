@@ -61,10 +61,14 @@ class BufferAudioSink(discord.AudioSink):
         speech_data = speech_recognition.AudioData(self.buffer[:self.buffer_pointer], self.SAMPLE_RATE_HZ * 2, discord.opus.Decoder.CHANNELS)
 
         try:
+            start = time.time()
             logger.info("Recognizing speech...")
             result = self.sr_source.recognize_speech(speech_data)
             if result:
+                elapsed_time = time.time() - start
+                time_per_character = elapsed_time / (len(result)+1)
                 logger.info(f"Said: {result}")
+                logger.info(f"Recognized speech in {elapsed_time:.6f} seconds ({time_per_character:.6f} seconds per character)")
                 self.loop.create_task(self.on_speech(self.speaker, result))
         except BaseException as e:
             self.is_speaking = False
