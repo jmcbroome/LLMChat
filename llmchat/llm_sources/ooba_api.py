@@ -12,6 +12,7 @@ import requests
 import json
 import datetime
 import pytz
+import time
 
 class OobaClient(LLMSource):
     """
@@ -127,18 +128,26 @@ class OobaClient(LLMSource):
         #or having it talk for the user in an irritating way
         ntext = []
         for line in text.split("\n"):
-            #if it wants to continue without indicating speaker, assume its supposed to be included in the bot response and don't check.
-            if ":" in line:
-                #if its trying to fill in for anyone other than the bot, stop here.
-                speaker = line[:line.find(":")].strip()
-                if speaker != self.config.bot_name:
-                    break
-            ntext.append(line)
+            #if it wants to continue without indicating speaker, assume its supposed to be included in the bot response and don't check. 
+            sline = line.strip()
+            if len(sline) == 0:
+                ntext.append(line)
+            else:
+                ind = sline.find(" ")-1
+                if ":" == sline[ind]:
+                    #if its trying to fill in for anyone other than the bot, stop here.
+                    speaker = sline[:ind]
+                    if speaker != self.config.bot_name:
+                        break
+                ntext.append(line)
+        if len(ntext) == 0:
+            logger.warn("Cleaned response is empty!")
         return "\n".join(ntext)
 
     async def generate_response(
         self, invoker: discord.User = None, channel = None
     ) -> str:
+            start = time.time()
             prompt = await self.get_prompt(invoker, channel)
             logger.debug(prompt)
             #TODO: use chat completion endpoint in some smarter way + use smarter stopping strings to allow the bot to send multiple consecutive messages
@@ -154,6 +163,9 @@ class OobaClient(LLMSource):
             }
             response = requests.post(uri, json=request, headers=headers, verify=False)
             if response.status_code == 200:
-                result = response.json()['choices'][0]['text'].strip()
+                result = response.json()['choices'][0]['text']
                 logger.debug(result)
+                elapsed_time = time.time() - start
+                time_per_character = elapsed_time / (len(result)+1)
+                logger.info(f"Result generated in {elapsed_time:.6f} seconds ({time_per_character:.6f} seconds per character)")
                 return self.clean_response(result)

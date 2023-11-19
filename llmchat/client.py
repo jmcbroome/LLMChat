@@ -21,7 +21,7 @@ from persistence import PersistentData
 from llm_sources import LLMSource
 from tts_sources import TTSSource
 from sr_sources import SRSource
-
+import time
 
 class DiscordClient(discord.Client):
     config: Config
@@ -667,6 +667,7 @@ class DiscordClient(discord.Client):
 
     async def say(self, text: str, vc: discord.VoiceClient, text_channel_ctx: discord.TextChannel = None, after=None, chunksize=250):
         #say the input text in chunks of words under the maximum character count.
+        start = time.time()
         def break_text_into_chunks(text, max_char_count):
             words = text.split()
             chunks = []
@@ -684,6 +685,10 @@ class DiscordClient(discord.Client):
         chunks = break_text_into_chunks(text, chunksize)
         for c in chunks:
             await self._say(c, vc, text_channel_ctx, after)
+        elapsed_time = time.time() - start
+        #avoid divide by zero errors for when it responds with a blank... 
+        time_per_character = elapsed_time / (len(text)+1)
+        logger.info(f"Speech rendered in {elapsed_time:.6f} seconds ({time_per_character:.6f} seconds per character)")
 
     async def _say(self, text: str, vc: discord.VoiceClient, text_channel_ctx: discord.TextChannel = None, after=None):
         try:
