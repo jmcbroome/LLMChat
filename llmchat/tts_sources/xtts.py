@@ -11,7 +11,6 @@ import torch
 import torchaudio
 import io
 
-
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 
@@ -27,6 +26,7 @@ class XTTS(TTSSource):
         logger.info("Loaded XTTS model.")
 
     async def generate_speech(self, content: str) -> io.BufferedIOBase:
+        #TODO: change to streaming inference and arrange awaits such that audio is played consecutively...
         gpt_cond_latent, speaker_embedding = self.model.get_conditioning_latents(audio_path=[self.config.xtts_voice])
         out = self.model.inference(
             content,

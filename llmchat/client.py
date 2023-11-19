@@ -665,12 +665,28 @@ class DiscordClient(discord.Client):
             self.db.remove_embedding(payload.cached_message.id)  # remove existing
             await self.store_embedding((payload.cached_message.author.id, payload.data["content"], payload.cached_message.id))  # regenerate
 
-    async def say(self, text: str, vc: discord.VoiceClient, text_channel_ctx: discord.TextChannel = None, after=None):
+    async def say(self, text: str, vc: discord.VoiceClient, text_channel_ctx: discord.TextChannel = None, after=None, chunksize=250):
+        #say the input text in chunks of words under the maximum character count.
+        def break_text_into_chunks(text, max_char_count):
+            words = text.split()
+            chunks = []
+            current_chunk = []
+            for word in words:
+                if current_chunk and len(' '.join(current_chunk + [word])) > max_char_count:
+                    chunks.append(' '.join(current_chunk))
+                    current_chunk = [word]
+                else:
+                    current_chunk.append(word)
+            if current_chunk:
+                chunks.append(' '.join(current_chunk))
+            return chunks
+
+        chunks = break_text_into_chunks(text, chunksize)
+        for c in chunks:
+            await self._say(c, vc, text_channel_ctx, after)
+
+    async def _say(self, text: str, vc: discord.VoiceClient, text_channel_ctx: discord.TextChannel = None, after=None):
         try:
-            #filter to the first 1000 symbols to prevent TTS collapse
-            if len(text) >= 1000:
-                logger.warn("TTS input over 1000 characters long! Truncating")
-                text = text[:1000]
             buf: io.BytesIO = await self.tts.generate_speech(text) 
             vc.stop()
             # for now i have to write this to a file so ffmpeg won't strip the last part.
